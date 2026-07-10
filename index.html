@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futory Cards</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <a href="https://simonallmer.com/arcade" target="_top" class="menu-btn back-to-arcade-btn tech-font" id="btn-back-arcade">&larr; Back to Arcade</a>
+
+    <div class="top-menu tech-font">
+        <button class="menu-btn help-icon-btn" id="btn-help" title="Quick Help">?</button>
+        <button class="menu-btn" id="btn-rules">Rules</button>
+        <button class="menu-btn" id="btn-keywords">Keywords</button>
+        <button class="menu-btn" id="btn-database">Database</button>
+        <button class="menu-btn" id="btn-options">Options</button>
+    </div>
+
+    <!-- Quick Help Window -->
+    <div id="quick-help-window" class="glass-panel hidden">
+        <h4 id="help-title" class="fantasy-font glowing-text">Quick Help</h4>
+        <p id="help-desc" class="tech-font">Hover over any area to learn more.</p>
+    </div>
+    <!-- Phase Tracking UI -->
+    <div id="game-phase-display" class="hidden">
+        <div id="active-player-label" class="tech-font">PLAYER 1</div>
+        <div class="phase-progress-bar">
+            <div class="phase-block active" data-phase="Steam"><span>Steam</span></div>
+            <div class="phase-block" data-phase="Construction"><span>Construction</span></div>
+            <div class="phase-block" data-phase="Creature"><span>Creature</span></div>
+            <div class="phase-block" data-phase="End"><span>End</span></div>
+        </div>
+        <button id="next-phase-btn" class="tech-font">Next Phase</button>
+        <button id="skip-turn-btn" class="tech-font hidden">Skip Turn</button>
+        <div class="phase-hint tech-font">[SPACEBAR]</div>
+    </div>
+
+    <!-- Contextual "Landmark in Use" window (below the phase panel) -->
+    <div id="landmark-context" class="hidden">
+        <div id="landmark-context-title" class="fantasy-font glowing-text">Landmark</div>
+        <div id="landmark-context-body" class="tech-font"></div>
+    </div>
+
+    <!-- Computer Opponent: live action feed (watch the moves, no clicking required) -->
+    <div id="ai-feed" class="hidden">
+        <div id="ai-feed-header" class="tech-font">
+            <span class="ai-feed-dot"></span>
+            <span class="ai-feed-title">COMPUTER</span>
+            <span class="ai-feed-collapse">&ndash;</span>
+        </div>
+        <div id="ai-feed-list" class="tech-font"></div>
+    </div>
+
+    <!-- Pass Device Overlay -->
+    <div id="pass-device-overlay" class="hidden">
+        <div class="overlay-backdrop"></div>
+        <div class="overlay-content">
+            <h1 class="tech-font">PASS DEVICE</h1>
+            <p id="next-player-hint" class="tech-font">To Player 2</p>
+            <button id="start-turn-btn" class="tech-font">START TURN</button>
+        </div>
+    </div>
+
+    <!-- Game Over Overlay -->
+    <div id="game-over-overlay" class="hidden">
+        <div class="overlay-backdrop"></div>
+        <div class="overlay-content">
+            <h1 class="tech-font glowing-text winner-title">PLAYER 1 WON</h1>
+            <p class="tech-font winner-subtitle">Victory is yours, explorer.</p>
+            <div class="game-over-buttons">
+                <button id="btn-play-again" class="tech-font menu-btn">Play Again</button>
+                <button id="btn-back-menu" class="tech-font menu-btn">Back to Menu</button>
+                <div class="game-over-actions">
+                    <button id="btn-stats" class="tech-font menu-btn secondary-btn">Stats</button>
+                    <button id="btn-close-overlay" class="tech-font menu-btn secondary-btn">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-field" class="players-2">
+        <!-- Player Slots (Populated by JS) -->
+        <div id="player-1" class="player-zone p1"></div>
+        <div id="player-2" class="player-zone p2"></div>
+        <div id="player-3" class="player-zone p3"></div>
+        <div id="player-4" class="player-zone p4"></div>
+
+        <div id="game-view" class="game-container bazaar-container">
+        <!-- Floating details modal -->
+        <div id="card-modal" class="modal hidden">
+            <div class="modal-content card-modal-content">
+                <button id="close-modal" class="close-btn">&times;</button>
+                <img id="modal-card-img" class="card-direct-img hidden" src="" alt="Card Image">
+                <div id="card-details" class="details-text tech-font hidden">
+                    <h2 id="modal-card-name"></h2>
+                    <p>Type: <span id="detail-type" class="highlight"></span></p>
+                    <p>Cost: <span id="detail-cost" class="highlight"></span></p>
+                    <p>Rarity: <span id="detail-rarity" class="highlight"></span></p>
+                    <p>Set: <span id="detail-set" class="highlight"></span></p>
+                    <p>Number: <span id="detail-number" class="highlight"></span></p>
+                    <p>Location: <span id="detail-location" class="highlight"></span></p>
+                    <hr class="separator">
+                    <p class="desc-text" id="detail-desc"></p>
+                    <p class="lore-text" id="detail-lore"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- The Bazaar Area -->
+        <div class="bazaar-area">
+            
+            <!-- Row 1 (8 columns) -->
+            <div class="empty"></div> <!-- Col 1 -->
+            <div class="card card--abyss" data-type="Abyss" data-loc="AB"></div> <!-- Col 2 -->
+            <div class="card card--steam card-red" data-type="Steam" data-loc="ST1"></div> <!-- Col 3 -->
+            <div class="card card--steam card-gold" data-type="Steam" data-loc="ST2"></div> <!-- Col 4 -->
+            <div class="card card--steam card-pink" data-type="Steam" data-loc="ST3"></div> <!-- Col 5 -->
+            <div class="card card--destiny" data-type="Destiny" data-loc="D"></div> <!-- Col 6 -->
+            <div class="card card--destiny-abyss" data-type="Destiny Abyss" data-loc="DA"></div> <!-- Col 7 -->
+            <div class="empty"></div> <!-- Col 8 -->
+
+            <!-- Row 2: Landmark (8 cards) -->
+            <div class="card card--landmark" data-type="Landmark" data-loc="L1"></div>
+            <div class="card card--landmark" data-type="Landmark" data-loc="L2"></div>
+            <div class="card card--landmark" data-type="Landmark" data-loc="L3"></div>
+            <div class="card card--landmark" data-type="Landmark" data-loc="L4"></div>
+            <div class="card card--landmark" data-type="Landmark" data-loc="L5"></div>
+            <div class="card card--landmark" data-type="Landmark" data-loc="L6"></div>
+            <div class="card card--landmark" data-type="Landmark" data-loc="L7"></div>
+            <div class="card card--landmark" data-type="Landmark" data-loc="L8"></div>
+
+            <!-- Row 3: Creature (8 cards) -->
+            <div class="card card--creature" data-type="Creature" data-loc="C1"></div>
+            <div class="card card--creature" data-type="Creature" data-loc="C2"></div>
+            <div class="card card--creature" data-type="Creature" data-loc="C3"></div>
+            <div class="card card--creature" data-type="Creature" data-loc="C4"></div>
+            <div class="card card--creature" data-type="Creature" data-loc="C5"></div>
+            <div class="card card--creature" data-type="Creature" data-loc="C6"></div>
+            <div class="card card--creature" data-type="Creature" data-loc="C7"></div>
+            <div class="card card--creature" data-type="Creature" data-loc="C8"></div>
+
+            <!-- Row 4: Artifact and Spark (8 cards) -->
+            <div class="card card--artifact" data-type="Artifact" data-loc="A1"></div>
+            <div class="card card--artifact" data-type="Artifact" data-loc="A2"></div>
+            <div class="card card--artifact" data-type="Artifact" data-loc="A3"></div>
+            <div class="card card--artifact" data-type="Artifact" data-loc="A4"></div>
+            <div class="card card--spark" data-type="Spark" data-loc="S1"></div>
+            <div class="card card--spark" data-type="Spark" data-loc="S2"></div>
+            <div class="card card--spark" data-type="Spark" data-loc="S3"></div>
+            <div class="card card--spark" data-type="Spark" data-loc="S4"></div>
+            
+        </div>
+
+        <!-- Right Side -->
+        <div id="player-4" class="player-zone p4"></div>
+
+        <!-- Bottom Side -->
+        <div id="player-1" class="player-zone p1"></div>
+    </div>
+
+    <!-- Database Screen -->
+    <div id="database-screen" class="screen hidden">
+        <div class="glass-panel database-panel">
+            <button id="close-database" class="close-btn">&times;</button>
+            <h2 class="fantasy-font glowing-text">Card Database</h2>
+            <div class="table-container">
+                <table id="database-table" class="tech-font">
+                    <thead>
+                        <tr>
+                            <th>Number</th>
+                            <th>Name</th>
+                            <th>Cost</th>
+                            <th>Rarity</th>
+                            <th>Type</th>
+                            <th>Set</th>
+                        </tr>
+                    </thead>
+                    <tbody id="database-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Keywords List Modal -->
+    <div id="keywords-list-modal" class="modal hidden">
+        <div class="modal-content glass-panel split-view keywords-list-split-panel">
+            <button id="close-keywords-list" class="close-btn">&times;</button>
+            <div class="split-left">
+                <h2 class="fantasy-font glowing-text">Game Keywords</h2>
+                
+                <div class="sort-controls tech-font">
+                    <button class="sort-btn active" data-sort="az">A to Z</button>
+                    <button class="sort-btn" data-sort="category">Category</button>
+                    <input type="text" id="keyword-search" placeholder="Search..." class="search-input">
+                </div>
+
+                <div id="keywords-list-container" class="keywords-list-container tech-font">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+            
+            <div class="split-right">
+                <div id="keyword-detail-display" class="keyword-detail-display tech-font">
+                    <h2 id="display-keyword-title" class="fantasy-font glowing-text" style="text-align: left; margin-bottom: 30px;">Select a Keyword</h2>
+                    <p id="display-keyword-desc" class="details-text"></p>
+                    <div id="keyword-meta-tags" class="keyword-meta-tags"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rules Book Modal -->
+    <div id="rules-modal" class="modal hidden">
+        <div class="modal-content rules-book-panel">
+            <button id="close-rules-modal" class="close-btn">&times;</button>
+            <div class="book-viewport">
+                <div class="book-3d" id="rules-book">
+                    <div class="book-page cover-front">
+                        <div class="page-content">
+                            <h1 class="fantasy-font glowing-text">FUTORY</h1>
+                            <p class="tech-font">RULEBOOK</p>
+                        </div>
+                    </div>
+                    <div class="book-page page-1">
+                        <div class="page-content">
+                            <h2 class="fantasy-font">The Game Loop</h2>
+                            <p class="phase-info tech-font"><strong>1. Steam Phase</strong>: Secure resources from the Bazaar using your earned Steams.</p>
+                            <p class="phase-info tech-font"><strong>2. Construction Phase</strong>: Play Landmarks and Artifacts to build your engine.</p>
+                            <p class="phase-info tech-font"><strong>3. Creature Phase</strong>: Summon minions to attack or defend your Time Points.</p>
+                            <p class="phase-info tech-font"><strong>4. End Phase</strong>: Draw cards and reset temporary effects.</p>
+                        </div>
+                    </div>
+                    <div class="book-page page-2">
+                        <div class="page-content">
+                            <h2 class="fantasy-font">Card Types</h2>
+                            <ul class="type-list tech-font">
+                                <li>Landmarks: Permanent structures.</li>
+                                <li>Creatures: Your combat entities.</li>
+                                <li>Artifacts: Utility tools.</li>
+                                <li>Sparks: One-time spells.</li>
+                                <li>Destiny: Game-wide events.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="book-page cover-back">
+                        <div class="page-content">
+                            <p class="fantasy-font">SIMON ALLMER APP</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="book-controls">
+                <button class="nav-btn" id="prev-page">PREV</button>
+                <button class="nav-btn" id="next-page">NEXT</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyword Details Modal (Small) -->
+    <div id="keyword-modal" class="modal hidden">
+        <div class="modal-content glass-panel keyword-modal-content">
+            <button id="close-keyword-modal" class="close-btn">&times;</button>
+            <h2 id="keyword-title" class="modal-title fantasy-font">Keyword</h2>
+            <p id="keyword-desc" class="details-text tech-font"></p>
+        </div>
+    </div>
+
+    <!-- Options Modal -->
+    <div id="options-modal" class="modal hidden">
+        <div class="modal-content glass-panel options-modal-content">
+            <button id="close-options-modal" class="close-btn">&times;</button>
+            <h2 class="modal-title fantasy-font">Options</h2>
+            <div class="options-container tech-font">
+                <div class="option-row">
+                    <span class="option-label">Player Count:</span>
+                    <div class="option-toggle" id="player-count-toggle">
+                        <button class="toggle-btn active" data-count="2">2</button>
+                        <button class="toggle-btn disabled" data-count="3" title="Coming Soon">3</button>
+                        <button class="toggle-btn disabled" data-count="4" title="Coming Soon">4</button>
+                    </div>
+                </div>
+                <div class="option-row">
+                    <span class="option-label">Card Sets:</span>
+                    <div class="option-toggle" id="sets-toggle">
+                        <button class="toggle-btn active" data-set="Unity">Unity</button>
+                        <button class="toggle-btn" data-set="Duality">Duality</button>
+                        <button class="toggle-btn disabled" data-set="Trinity" title="Coming 2028">Trinity</button>
+                    </div>
+                </div>
+                <div class="option-row">
+                    <span class="option-label">Rule Enforcement:</span>
+                    <div class="option-toggle">
+                        <button class="toggle-btn active" id="mode-manual">Manual</button>
+                        <button class="toggle-btn disabled" id="mode-auto" title="Coming Soon">Automatic</button>
+                    </div>
+                </div>
+                <div class="option-row">
+                    <span class="option-label">Opponent:</span>
+                    <div class="option-toggle" id="opponent-toggle">
+                        <button class="toggle-btn active" data-opponent="human">Human</button>
+                        <button class="toggle-btn" data-opponent="computer">Computer</button>
+                    </div>
+                </div>
+                <div class="option-row hidden" id="difficulty-row">
+                    <span class="option-label">Difficulty:</span>
+                    <div class="option-toggle" id="difficulty-toggle">
+                        <button class="toggle-btn" data-difficulty="easy">Easy</button>
+                        <button class="toggle-btn active" data-difficulty="normal">Normal</button>
+                        <button class="toggle-btn" data-difficulty="hard">Hard</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location Modal -->
+    <div id="location-modal" class="modal hidden">
+        <div class="glass-panel location-modal-content split-view">
+            <button id="close-location-modal" class="close-btn">&times;</button>
+            <div class="split-left">
+                <h2 id="location-title" class="fantasy-font glowing-text">Location</h2>
+                <div class="location-cards-container tech-font" id="location-cards">
+                    <!-- Stacked cards rendered here -->
+                </div>
+            </div>
+            
+            <div class="split-right">
+                <div id="location-card-preview" class="card-preview hidden">
+                    
+                    <img id="preview-card-img" class="card-direct-img hidden" src="" alt="Card Preview">
+
+                    <div id="pdf-card-template" class="pdf-card">
+                        <div class="pdf-head">
+                            <div class="pdf-name" id="preview-card-name">Pandorama</div>
+                            <div class="pdf-cost" id="preview-cost"></div>
+                        </div>
+                        
+                        <div class="pdf-artbox">
+                            <div class="pdf-art-img"></div>
+                            <div class="pdf-rarity">Rarity: <span id="preview-rarity">3</span></div>
+                            <div class="pdf-futory">FUTORY CARDS</div>
+                            <div class="pdf-type-badge" id="preview-type">LANDMARK</div>
+                        </div>
+
+                        <div class="pdf-body">
+                            <div class="pdf-desc" id="preview-desc"></div>
+                            <div class="pdf-health hidden" id="preview-health">
+                                <div id="preview-health-val">2</div>
+                            </div>
+                        </div>
+
+                        <div class="pdf-foot">
+                            <div class="pdf-meta">
+                                <span id="preview-number">001</span> <span id="preview-type-small">Landmark</span><br>
+                                <span style="font-size: 8px;">Illustr. None<br>©2022-2024 Allmer</span>
+                            </div>
+                            <div class="pdf-lore" id="preview-lore">"Those who reach the Pandorama..."</div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <template id="player-zone-template">
+        <div class="board-layout">
+            <!-- Play Area -->
+            <div class="board-upper-row merged-row">
+                <div class="dice-sidebar">
+                    <div class="dice-counters-row">
+                        <div class="die-group day-die-group">
+                            <div class="die-viewport mini-die">
+                                <div class="circle-counter day-counter orange-die">12</div>
+                            </div>
+                            <div class="die-name tech-font">Day</div>
+                        </div>
+
+                        <div class="die-group night-die-group">
+                            <div class="die-viewport mini-die">
+                                <div class="circle-counter night-counter blue-die">12</div>
+                            </div>
+                            <div class="die-name tech-font">Night</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="board-main-zones">
+                    <div class="zone-group creature-zone-group">
+                        <div class="board-label tech-font">Creature Zone</div>
+                        <div class="board-row-wrapper">
+                            <div class="board-main-slots creature-zone-main"></div>
+                            <div class="board-stack-slot history-pile-container"></div>
+                        </div>
+                    </div>
+                    <div class="zone-group landmark-zone-group">
+                        <div class="board-label tech-font">Landmark Zone</div>
+                        <div class="board-row-wrapper">
+                            <div class="board-main-slots landmark-zone-main"></div>
+                            <div class="board-stack-slot future-pile-container"></div>
+                        </div>
+                        <button class="start-game-btn tech-font">Start Game</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hand / Fan Area (Metal fan for active, small for others) -->
+            <div class="board-hand-row">
+                <!-- Full Hand (Player 1) -->
+                <div class="player-hand-container">
+                    <div class="hand-auto-drop tech-font hidden"><span>+</span></div>
+                    <div class="hand-slots">
+                        <div class="card slot-empty hand-slot s1"></div>
+                        <div class="card slot-empty hand-slot s2"></div>
+                        <div class="card slot-empty hand-slot s3"></div>
+                        <div class="card slot-empty hand-slot s4"></div>
+                        <div class="card slot-empty hand-slot s5"></div>
+                        <div class="card slot-empty hand-slot s6 hidden-slot"></div>
+                        <div class="card slot-empty hand-slot s7 hidden-slot"></div>
+                    </div>
+                </div>
+                <!-- Inactive Hand (Small Icon + Count) -->
+                <div class="inactive-hand-display">
+                    <div class="hand-fan-icon">
+                        <div class="mini-card-icon c1"></div>
+                        <div class="mini-card-icon c2"></div>
+                        <div class="mini-card-icon c3"></div>
+                    </div>
+                    <span class="hand-card-count tech-font">5</span>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <div id="attack-action-menu" class="overlay hidden">
+        <div class="modal-content glass-panel action-menu">
+            <h3 class="tech-font">COMBAT COMMAND</h3>
+            <div class="action-buttons">
+                <button id="btn-attack-execute" class="menu-btn combat-btn">ATTACK</button>
+                <button id="btn-attack-cancel" class="menu-btn secondary-btn">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="defense-overlay" class="overlay hidden">
+        <div class="modal-content glass-panel combat-modal">
+            <h2 id="combat-title" class="tech-font">CREATURE ATTACK!</h2>
+            <div id="combat-info">
+                <div id="attacker-preview" class="combat-preview"></div>
+                <div class="combat-vs">VS</div>
+                <div id="defender-target" class="combat-preview">PLAYER</div>
+            </div>
+            <div class="defense-options">
+                <button id="btn-block-creature" class="menu-btn combat-btn">BLOCK WITH CREATURE</button>
+                <button id="btn-play-artifact" class="menu-btn combat-btn">PLAY ARTIFACT</button>
+                <hr class="separator">
+                <button id="btn-combat-continue" class="menu-btn combat-btn continue-btn">CONTINUE</button>
+            </div>
+            <div id="combat-feedback" class="tech-font">Direct Damage Selected</div>
+        </div>
+    </div>
+
+    <div id="darkmatter-overlay" class="overlay hidden">
+        <div class="modal-content glass-panel combat-modal">
+            <h2 class="tech-font">DARK MATTER!</h2>
+            <div id="combat-info">
+                <div id="darkmatter-preview" class="combat-preview"></div>
+                <div class="combat-vs">VS</div>
+                <div id="darkmatter-target" class="combat-preview">PLAYER</div>
+            </div>
+            <div class="defense-options">
+                <button id="btn-dm-sacrifice" class="menu-btn combat-btn">SACRIFICE CREATURE</button>
+                <button id="btn-dm-discard" class="menu-btn combat-btn">DISCARD CARD</button>
+                <button id="btn-dm-losetp" class="menu-btn combat-btn">LOSE 2 TIME POINTS</button>
+            </div>
+            <div id="darkmatter-feedback" class="tech-font">Choose ONE:</div>
+        </div>
+    </div>
+
+    <div id="target-player-overlay" class="overlay hidden">
+        <div class="modal-content glass-panel">
+            <h2 class="tech-font">SELECT TARGET PLAYER</h2>
+            <div id="target-player-list" class="target-list"></div>
+        </div>
+    </div>
+
+    <script src="cardData.js"></script>
+    <script src="script.js"></script>
+    <script src="demo-timer.js"></script>
+</body>
+</html>
