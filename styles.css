@@ -1825,6 +1825,120 @@ body.dev-mode-on::after {
 .cover-front { background: linear-gradient(135deg, #2c3e50, #000); border-right: 5px solid #000; }
 .cover-back { background: linear-gradient(-135deg, #2c3e50, #000); border-left: 5px solid #000; }
 
+/* --- Quick Start booklet pages --- */
+.cover-content {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.cover-sub {
+  letter-spacing: 6px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.cover-meta {
+  letter-spacing: 2px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.rule-page {
+  position: relative;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.rule-kicker {
+  font-size: 10px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 6px;
+}
+
+.rule-page h2 {
+  font-size: 19px;
+  letter-spacing: 2px;
+  margin-bottom: 14px;
+  color: #fff;
+}
+
+.rule-page p {
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.rule-page strong { color: #fff; }
+
+.rule-callout {
+  margin-top: auto;
+  margin-bottom: 20px;
+  padding: 10px 12px;
+  border-left: 2px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: #fff;
+}
+
+.rule-list {
+  list-style: none;
+  padding: 0;
+}
+
+.rule-list li {
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.rule-list li:last-child { border-bottom: none; }
+
+.rule-dest {
+  list-style: none;
+  padding: 0;
+  margin-top: 4px;
+}
+
+.rule-dest li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+  padding: 6px 10px;
+  margin-bottom: 5px;
+  border-radius: 4px;
+  border-left: 3px solid transparent;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.rule-dest li span { color: rgba(255, 255, 255, 0.6); font-size: 12px; }
+
+.dest-steam    { border-left-color: #e05a3a; }
+.dest-landmark { border-left-color: #4e9a6f; }
+.dest-creature { border-left-color: #4a72b8; }
+.dest-artifact { border-left-color: #8e5aa8; }
+.dest-spark    { border-left-color: #9aa0a6; }
+
+.rk-fire  { color: #ff6a4d; font-weight: 600; }
+.rk-gold  { color: #d9c56a; font-weight: 600; }
+.rk-laser { color: #ff8ac2; font-weight: 600; }
+.rk-day   { color: #f39c2d; font-weight: 600; }
+.rk-night { color: #5b8ae0; font-weight: 600; }
+
+.page-num {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
 .book-controls {
   margin-top: 30px;
   display: flex;
