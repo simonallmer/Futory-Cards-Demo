@@ -79,7 +79,7 @@ function showWelcomeMessage(onStart) {
             <h1 style="font-family: 'Cinzel', serif; font-size: 2.1rem; letter-spacing: 0.12em; color: #fff; text-shadow: 0 0 20px ${ACCENT_DIM}; margin: 0 0 22px;">FUTORY CARDS</h1>
             <p style="font-size: 1.02rem; line-height: 1.7; letter-spacing: 0.03em; color: ${TEXT_DIM}; margin-bottom: 32px;">
                 You have <strong style="color:${ACCENT};">10 minutes</strong> of free play per day.
-                Your time starts when you tap below &mdash; so take a breath first.
+                Your time starts when you tap below.
             </p>
             <button id="demo-welcome-start" style="
                 display: inline-block; padding: 14px 46px;
