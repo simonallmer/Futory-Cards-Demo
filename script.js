@@ -627,6 +627,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const devLogData = [
+        { date: '2026-08-02', msg: "System — SMARTPHONE MODE (bird's-eye + section camera). The desktop tabletop (a 3-row grid: rival top / Bazaar middle / you bottom, ~900px wide) was unusable on a phone — the top menu overflowed and cards spilled off both edges. New mobile mode activates only on small/touch screens (matchMedia '(max-width:820px)' OR '(pointer:coarse)', re-checked on change) by adding body.mobile-mode; the whole desktop layout is untouched otherwise. Instead of reflowing the board, it keeps the real DOM and drives a CSS-transform 'camera' over #game-field (translate+scale via --cam-x/y/s), so every existing interaction and animation still works. Views: OVERVIEW (bird's-eye of the whole table), plus zoomed BAZAAR / YOU / RIVAL sections that fill the screen; switch with the bottom nav arrows or tappable chips (Field/Rival/Bazaar/You). Free one-finger PAN and two-finger PINCH-zoom explore each section (a userAdjusted flag stops auto-reframes from fighting a manual pan; a MutationObserver + resize/orientation re-fit otherwise). Local-coordinate math reads the field's LIVE matrix scale so framing stays exact even mid-animation. Chrome: a compact top bar (☰ menu · turn+phase mirror · Next/Skip proxying the real phase buttons), a top 'Carrying <card> — tap a glowing slot' banner with Cancel (the desktop follow-ghost can't track a finger), and the section nav. The ☰ opens the shared game menu (now given pointer-events — as a .modal it was silently click-through on BOTH platforms; reused the game-over overlay's positioning instead) with Resume/New Game + a tool grid (Rules/Keywords/Database/Options/Dev Log/Help) proxying the hidden desktop buttons, and backdrop-tap-to-close. Two structural fixes a transformed field forced: (1) moved #card-modal OUT of #game-field — a transform makes it the containing block for position:fixed descendants, which had trapped & scaled the detail modal inside the board; (2) disabled the 750ms hover-preview on mobile — touch fires mouseenter with no matching mouseleave, so it popped the card modal on every tap and never dismissed. Also a gesture click-guard swallows the click a pan/pinch leaves behind so navigation never grabs a card. Verified live at 375×812: all four views frame correctly and are distinct; grab-in-Bazaar → switch to You → auto-drop places the card and advances the phase; pan moved the camera 1:1 (+100px) and pinch zoomed (clamped 1.7×); menu + Database open contained/scrollable; no console errors. KNOWN LIMIT for Simon: the tool panels were built at fixed desktop sizes — Database/Options/Keywords are clamped to the viewport and scroll fine, but the 900×600 Rules FLIP-BOOK still needs a dedicated single-column mobile layout (it opens but renders cramped). Want me to redesign the Rules book (and polish the tool panels) for mobile next?" },
+        { date: '2026-08-02', msg: "System — Play Again / new in-game Menu. Fixed the reported bug where finishing a game left you unable to start a new one without a full page refresh: the old 'Play Again' button re-dealt the boards but never cleared gameWon, and gameWon gates ALL phase interaction (updatePhaseUI/turn control) plus the entire AI loop — so the 'fresh' game booted frozen. Extracted one shared resetGameToStart() that clears every game-level flag (gameWon, gameStarted, aiTurnInProgress, currentPlayer/currentPhase/totalTurns) and the per-turn flags that only ever reset inside finishTurn (planetarium/lethargo/aetherlab/mines/rhone/cloneFactory/looper/hyperscope/strDebuff/cellShield, plus cancelGrab + closeLandmarkContext), resets each seat to 12/12 Day-active with 0 Rhone charge, REFILLS the Bazaar (initBazaarInventory — a finished game has piles sold down) and rebuilds all boards, then hides every leftover overlay (.overlay + game-over/pass-device/landmark-context/phase panel) and strips the appended SWITCH VIEW button. Game Over 'Play Again' now calls resetGameToStart() then window.handleStartGame() for one-click replay. Added a persistent 'Menu' button to the top bar (between ? and Rules) opening a glass overlay — Resume Game / New Game / Back to Arcade — so a game can be restarted mid-play too; New Game confirm()s before discarding a game in progress. Verified live: Menu opens/closes; New Game mid-game returns the exact fresh-load state (Start Game button present, game-field turn-p1, zero open overlays), then Start Game deals P1+P2 their opening 3 with all 28 Bazaar piles refilled and the phase panel live — no console errors, board fully interactive (not frozen)." },
         { date: '2026-07-24', msg: "System — Computer opponent is now the DEFAULT in both the full version and the Demo: vsComputer starts true, the Options toggle shows Computer active (difficulty row + AI feed visible on first load), and the localStorage preference now round-trips an explicit Human choice (typeof check instead of truthy) so picking Human still sticks across sessions. Also rewrote the Rules book from the 2-placeholder-page stub into the full QUICK START RULES booklet, extracted from assets/QuickStartRulesWeb.pdf and restyled in-game (Cinzel headings, Rajdhani body, kickers, page numbers, Steam/Day/Night color accents, color-coded purchase-destination rows): 12 pages — The Story, Card Elements, Setup (Bazaar + Deck), Time Points, Future & History, Buying Cards, Card Types, Creatures & Combat, Phases 1–4 with Skip Turn, and Destiny Cards. Fixed a latent book bug along the way: updateBook() was never called on load, so the BACK cover rendered on top by DOM order — it now runs once at init and resets to the cover each time the Rules modal opens. Verified live in both builds: fresh localStorage boots with Computer active and the AI feed shown, all 14 book pages flip in order with zero page overflow, no console errors." },
         { date: '2026-07-10', msg: "Burden of Wealth (Duality S4) — implemented (active), completing all FOUR Duality Sparks (and the whole Duality Bazaar): 'Target damage to a Player equal to the Cards in their Hand. They may reduce damage by discarding Cards, from most expensive to least.' resolveBurden() offers a player picker (all seats, self included — 'a Player', faithful) with each seat's live Hand count. beginBurden() sorts the target's Hand most-expensive-first and sets damage = Hand size N. The expensiveness comparator burdenExpensiveness() encodes the PRINTED rule — FIRST total Steams used (a Card's Bazaar-cost pip count), THEN Steam value (Laser > Gold > Fire > AllSteam): so FFL > GGG (equal count, Laser outranks Gold) and FFF > GL (3 pips beat 2, count dominates). This is deliberately the OPPOSITE priority to the existing cardCostValue() auto-discard heuristic (where tier dominates count), so Burden gets its own comparator; Steam Cards rank by their own printed Bazaar cost (LaserSteam 'FGG' > GoldSteam 'AAA' > FireSteam '-'), landing them in a sensible order with zero special-casing. The target then chooses how many of their TOP Cards to shed (each −1 damage) — promptBurdenDiscard() shows a glass overlay listing the Hand in expensiveness order as clickable chips (click a chip to discard the whole prefix through it, click the current boundary to step back one), with the selected Cards struck through red and a live 'Discard k → Take N−k damage' readout; most-expensive-first is enforced by construction (you can only take the top k). applyBurden() discards the k Cards to the target's OWN History and deals the remaining N−k through the standard resolveDamageDirectly (active die first). The Computer decides for itself when targeted (aiHoards: keep all Cards unless the hit is lethal, in which case shed just enough of its most expensive to survive). Sim preset (Duality active; P2 holds Sea Lord/LaserSteam/GoldSteam/Cravus/FireSteam = 5 damage). Verified live: buying from S4 spent GGLL → Abyss, picker read '0 Cards' / '5 Cards'; targeting P2 opened the stepper with chips ordered EXACTLY Sea Lord (GGGLL) > LaserSteam (FGG) > GoldSteam (AAA) > Cravus (GG) > FireSteam; discarding the top 3 sent Sea Lord/LaserSteam/GoldSteam to P2's History, left Cravus + FireSteam, and dealt 2 (P2 Day 12→10); a re-run confirming 0 discards took the full 5 with the Hand intact. No console errors. NOTE FOR SIMON: expensiveness is read off each Card's Bazaar cost pips (so a LaserSteam, cost FGG, outranks a GoldSteam, cost AAA) — tell me if you'd rather a Steam Card rank by its own emitted Steam (its type) instead of its purchase cost." },
         { date: '2026-07-10', msg: "Tele Control (Duality S3) — implemented (active): 'Use an active Creature to attack a Player of your choice. The controlled Creature is not discarded.' Registered in sparkEffects (buy-and-play path). resolveTeleControl() gathers every ACTIVE Creature on BOTH boards — face-up and able to act, using the same canAct rule the attack flow/AI use (summonedOnTurn < totalTurns, or Cravus/Rampadon), so an opponent's Creature always qualifies on your turn — the whole point of the card is to commandeer their Creature and turn it on them. With one it auto-advances; with several it pulses each red behind a 'TELE CONTROL — CHOOSE A CREATURE TO COMMAND' bar (capture-click, no CANCEL — a Spark is committed). chooseTeleControlTarget() then offers EVERY seat as the strike target ('a Player of your choice' is literal, self included). launchTeleControlAttack() runs the strike through the NORMAL pipeline — beginAttack (Entrophy/Meridius scaling intact) → defense screen, so the target can still block and respond with Artifacts — tagged { ...card, teleControlled:true }. Two engine hooks make it correct: (1) finishAttacker short-circuits at the top when teleControlled && !defeated — the Creature stays in its owner's zone instead of being spent to History (only a genuine mutual-destruction defeat, which really hit 0 HP, still discards it — JUDGMENT CALL); (2) initiateDefense now filters the attacker slot out of the blocker list (a Creature can never block itself — matters when you aim a commandeered Creature back at its own owner, who might otherwise be offered it as a blocker; a harmless no-op in normal cross-board combat). Sim preset (Duality active; P1 Ichor, P2 Sea Lord Str 6, both active). Verified live BOTH directions: buying Tele Control from S3 spent FGL, sent it to the Abyss and pulsed both creatures; commandeering P2's OWN Sea Lord and aiming it at Player 2 struck for 6 (P2 Day 12→6, block disabled since its only Creature was the attacker), and the Sea Lord STAYED in P2's zone with P2's History empty; a re-run commandeering your own Ichor vs P2 left P2 able to block with Sea Lord, resolved a direct strike for 2, and the Ichor stayed in P1's zone (History held only the FGL payment, no Ichor). No console errors. V1: the Computer doesn't buy Sparks, so it never casts Tele Control (its Creatures are valid targets). NOTE FOR SIMON: 'not discarded' is read as surviving the normal after-attack spend; a controlled Creature that dies in mutual destruction still goes to History. Tell me if it should be immune to that too." },
@@ -2385,6 +2387,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function bindHoverToElement(el, cardData) {
         // Remove old listeners if any (simplified here)
         el.onmouseenter = () => {
+            // On touch there is no real hover: a tap fires mouseenter but never a
+            // matching mouseleave, so the 750ms preview would pop the card modal on
+            // every tap and never dismiss. Skip the hover-preview entirely on mobile
+            // (cards are readable in the zoomed section view; full details live in
+            // the Database screen).
+            if (document.body.classList.contains('mobile-mode')) return;
             clearTimeout(hoverTimer);
             hoverTimer = setTimeout(() => {
                 // Re-read live state — deactivation can change after binding.
@@ -2784,8 +2792,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Bazaar card hover logic
         cardContainer.addEventListener('mouseenter', () => {
+            // On touch there's no hover — a tap fires mouseenter and this 750ms timer
+            // would pop the fullscreen card modal on every tap. Mobile inspects via
+            // long-press instead (see the delegated handler in the mobile module).
+            const onMobile = document.body.classList.contains('mobile-mode');
             const availableCards = cardData.filter(c => selectedSets.includes(c.set) && c.location === loc);
-            if (availableCards.length > 0) {
+            if (!onMobile && availableCards.length > 0) {
                 hoverTimer = setTimeout(() => {
                     showCardDetails(availableCards[availableCards.length-1], true);
                 }, 750);
@@ -8039,22 +8051,126 @@ document.addEventListener('DOMContentLoaded', () => {
         syncUI();
     })();
 
+    // --- Full reset back to the pre-"Start Game" state ---
+    // Used by both the Game Over "Play Again" button and the in-game Menu's
+    // "New Game". The old Play Again only re-dealt the boards but left gameWon
+    // true (which gates ALL phase interaction and the AI), so the fresh game was
+    // frozen and the only way out was a page refresh. This resets every game-level
+    // flag so the board is genuinely playable again without reloading.
+    function resetGameToStart() {
+        // Core game-state flags
+        gameStarted = false;
+        gameWon = false;
+        aiTurnInProgress = false;
+        currentPlayer = 1;
+        currentPhase = 0;
+        totalTurns = 0;
+
+        // Per-turn / per-phase flags (normally reset at the start of each turn,
+        // but the first turn after a fresh start never runs finishTurn).
+        turnSkipped = false;
+        steamBoughtThisTurn = false;
+        planetariumStaged = 0;
+        planetariumUsedThisTurn = false;
+        lethargoActive = false;
+        lethargoOnlyTP = false;
+        lethargoUsedThisPhase = false;
+        lethargoViewedCard = null;
+        activeStrDebuff = 0;
+        cellShieldDefender = null;
+        aetherlabUsedThisPhase = false;
+        minesUsedThisPhase = false;
+        rhoneChargedThisPhase = false;
+        disarmCloneFactory();
+        deactivateAetherlab();
+        resetLooper();
+        resetHyperscopeTurnDamage();
+        closeLandmarkContext();
+        cancelGrab();
+
+        // Per-player resources
+        for (let i = 1; i <= 4; i++) {
+            if (playersState[i]) {
+                playersState[i].day = 12;
+                playersState[i].night = 12;
+                playersState[i].activeDie = 'day';
+                updateActiveDieGlow(i);
+                rhoneCharge[i] = 0;
+            }
+        }
+
+        // Refill the Bazaar (a finished game will have piles sold down) and rebuild boards.
+        initBazaarInventory();
+        initAllActiveBoards();
+        renderBazaar();
+        if (window.updateBazaarLighting) window.updateBazaarLighting();
+
+        // Hide anything left open from the previous game (every combat/pass
+        // overlay, plus the named panels).
+        document.querySelectorAll('.overlay').forEach(el => el.classList.add('hidden'));
+        ['game-over-overlay', 'pass-device-overlay', 'landmark-context',
+         'game-phase-display'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        });
+        const switchBtn = document.getElementById('btn-switch-view');
+        if (switchBtn) switchBtn.remove();
+
+        const gameField = document.getElementById('game-field');
+        if (gameField) gameField.className = `players-${activePlayerCount} turn-p1`;
+
+        // On mobile, aim the camera back at the human board (the Start Game button lives there).
+        if (window.fcMobile && window.fcMobile.isActive()) {
+            requestAnimationFrame(() => window.fcMobile.goTo('you'));
+        }
+    }
+
     // --- Game Over Button Handlers ---
     if (btnPlayAgain) {
         btnPlayAgain.addEventListener('click', () => {
-            gameOverOverlay.classList.add('hidden');
-            // Complete reset: Re-initialize player states and boards
-            gameStarted = false;
-            for (let i = 1; i <= 4; i++) {
-                if (playersState[i]) {
-                    playersState[i].day = 12;
-                    playersState[i].night = 12;
-                    playersState[i].activeDie = 'day';
-                    updateActiveDieGlow(i);
-                    rhoneCharge[i] = 0;
-                }
+            resetGameToStart();
+            // One-click replay: deal a fresh game immediately.
+            if (window.handleStartGame) window.handleStartGame();
+        });
+    }
+
+    // --- In-game Menu (top bar) ---
+    const gameMenuOverlay = document.getElementById('game-menu-overlay');
+    const btnMenu = document.getElementById('btn-menu');
+    const btnMenuResume = document.getElementById('btn-menu-resume');
+    const btnMenuNewGame = document.getElementById('btn-menu-newgame');
+    // Tap the dimmed backdrop (outside the panel) to dismiss the menu. Guarded by
+    // an "opened at" timestamp so the same click/tap that opens the menu can't also
+    // close it as its event finishes bubbling.
+    window.__menuOpenedAt = 0;
+    if (gameMenuOverlay) {
+        gameMenuOverlay.addEventListener('click', (e) => {
+            if (Date.now() - window.__menuOpenedAt < 250) return;
+            if (e.target === gameMenuOverlay || e.target.classList.contains('overlay-backdrop')) {
+                gameMenuOverlay.classList.add('hidden');
             }
-            initAllActiveBoards();
+        });
+    }
+    if (btnMenu && gameMenuOverlay) {
+        btnMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            window.__menuOpenedAt = Date.now();
+            gameMenuOverlay.classList.remove('hidden');
+        });
+    }
+    if (btnMenuResume && gameMenuOverlay) {
+        btnMenuResume.addEventListener('click', () => gameMenuOverlay.classList.add('hidden'));
+    }
+    if (btnMenuNewGame && gameMenuOverlay) {
+        btnMenuNewGame.addEventListener('click', () => {
+            // Confirm before throwing away a game that's still in progress.
+            if (gameStarted && !gameWon &&
+                !confirm('Start a new game? The current game will be lost.')) {
+                return;
+            }
+            gameMenuOverlay.classList.add('hidden');
+            // Reset to the fresh "Start Game" board (mirrors a page load).
+            resetGameToStart();
         });
     }
 
@@ -8075,6 +8191,380 @@ document.addEventListener('DOMContentLoaded', () => {
             gameOverOverlay.classList.add('hidden');
         });
     }
+
+    // ==================================================================
+    // ==================== MOBILE / SMARTPHONE MODE ====================
+    // A "camera" over the existing desktop table: bird's-eye overview plus
+    // zoomed section views (Rival / Bazaar / You), navigated by arrows or
+    // tappable chips. Everything reuses the real board DOM & game logic —
+    // we only pan/zoom a CSS transform on #game-field. Gated on small/touch
+    // screens so the desktop experience is completely unchanged.
+    // ==================================================================
+    (function initMobileMode() {
+        const gf = document.getElementById('game-field');
+        const topbar = document.getElementById('mobile-topbar');
+        const nav = document.getElementById('mobile-nav');
+        const carry = document.getElementById('mobile-carry');
+        if (!gf || !topbar || !nav) return;
+
+        const SECTIONS = ['overview', 'opponent', 'bazaar', 'you'];
+        let currentSection = 'you';   // start on the human board (Start Game lives there)
+        let mobileActive = false;
+
+        // iOS Safari keeps its bottom address bar permanently expanded on a
+        // scroll-locked page, overlapping anything at bottom:0. There's no way to
+        // force true fullscreen in mobile Safari, so instead we anchor the bottom
+        // chrome to the VISUAL viewport: --vv-bottom is the height Safari's bars
+        // steal from the bottom, --vv-top from the top. Kept live as the bars move.
+        // How much the browser bars steal from the bottom. When VisualViewport can
+        // measure it (page is the top-level document) we use that exact value. But on
+        // simonallmer.com the game runs inside an iframe, so VisualViewport reports the
+        // iframe's own box and can't see Safari's toolbar — there we fall back to a
+        // portrait-only guess so the bottom nav still clears the address bar.
+        const SAFARI_PORTRAIT_GUESS = 64; // px — tune if the nav sits too low/high
+        function currentBottomInset() {
+            const vv = window.visualViewport;
+            const vvBottom = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
+            if (vvBottom > 4) return vvBottom; // real, accurate measurement
+            return window.matchMedia('(orientation: portrait)').matches ? SAFARI_PORTRAIT_GUESS : 0;
+        }
+        function updateViewportInsets() {
+            const vv = window.visualViewport;
+            const root = document.documentElement;
+            root.style.setProperty('--vv-top', vv ? Math.max(0, vv.offsetTop).toFixed(1) + 'px' : '0px');
+            root.style.setProperty('--nav-bottom-offset', currentBottomInset().toFixed(1) + 'px');
+        }
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', () => { updateViewportInsets(); reframe(); });
+            window.visualViewport.addEventListener('scroll', updateViewportInsets);
+        }
+        window.matchMedia('(orientation: portrait)').addEventListener('change', () => { updateViewportInsets(); reframe(); });
+        updateViewportInsets();
+
+        // Which seat is the human's, and their opponent's (V1 = 2 players).
+        function humanSeat() {
+            if (typeof vsComputer !== 'undefined' && vsComputer) {
+                return (typeof AI_PLAYER !== 'undefined' && AI_PLAYER === 1) ? 2 : 1;
+            }
+            return currentPlayer;
+        }
+        function opponentSeat() { return humanSeat() === 1 ? 2 : 1; }
+
+        function sectionTarget(id) {
+            if (id === 'overview') return gf;
+            if (id === 'bazaar') return document.querySelector('.bazaar-area');
+            if (id === 'you') return document.getElementById(`player-${humanSeat()}`);
+            if (id === 'opponent') return document.getElementById(`player-${opponentSeat()}`);
+            return gf;
+        }
+
+        // ---- Camera state (x/y translate in px, s uniform scale) ----
+        const cam = { x: 0, y: 0, s: 1 };
+
+        function applyCam(animate) {
+            gf.style.transition = animate ? '' : 'none'; // '' = fall back to CSS transition
+            gf.style.setProperty('--cam-x', cam.x.toFixed(1) + 'px');
+            gf.style.setProperty('--cam-y', cam.y.toFixed(1) + 'px');
+            gf.style.setProperty('--cam-s', cam.s.toFixed(4));
+        }
+
+        // Live uniform scale from the field's actual matrix (exact even mid-animation).
+        function liveScale() {
+            const t = getComputedStyle(gf).transform;
+            if (!t || t === 'none') return 1;
+            try { return new DOMMatrixReadOnly(t).a || 1; } catch (e) { return 1; }
+        }
+        // Intrinsic (view-independent) rect of an element in field-local coordinates.
+        function fieldLocalRect(el) {
+            const s0 = liveScale();
+            const fr = gf.getBoundingClientRect();
+            const er = el.getBoundingClientRect();
+            return {
+                x: (er.left - fr.left) / s0,
+                y: (er.top - fr.top) / s0,
+                w: er.width / s0,
+                h: er.height / s0,
+            };
+        }
+        function getBand() {
+            const vv = window.visualViewport;
+            const topOff = vv ? vv.offsetTop : 0;
+            const barH = topbar.getBoundingClientRect().height || 52;
+            const navH = nav.getBoundingClientRect().height || 60;
+            const bottomInset = currentBottomInset();   // Safari bar (measured or guessed)
+            const availTop = topOff + barH + 6;
+            const availBottom = window.innerHeight - bottomInset - navH - 8;
+            const availH = Math.max(80, availBottom - availTop);
+            const availW = window.innerWidth - 16;
+            return { availTop, availH, availW, cx: window.innerWidth / 2, cy: availTop + availH / 2 };
+        }
+        // Zoom-out floor (whole table fits) and a comfortable ceiling.
+        function scaleBounds() {
+            const r = fieldLocalRect(gf);
+            const b = getBand();
+            const fit = Math.min(b.availW / r.w, b.availH / r.h);
+            return { min: fit * 0.85, max: 1.7 };
+        }
+        function clampScale(s) {
+            const { min, max } = scaleBounds();
+            return Math.max(min, Math.min(max, s));
+        }
+
+        function computeTarget(section) {
+            const el = sectionTarget(section);
+            if (!el) return null;
+            const r = fieldLocalRect(el);
+            const b = getBand();
+            if (r.w <= 0 || r.h <= 0) return null;
+            let s;
+            if (section === 'overview') {
+                s = Math.min(b.availW / r.w, b.availH / r.h) * 0.98;
+            } else {
+                // Zoom in past "see the whole thing" so a section fills the screen;
+                // the user pans/pinches to explore the overflow.
+                s = Math.min(b.availW / r.w, b.availH / r.h) * 1.55;
+                s = Math.min(s, 1.15);
+            }
+            s = clampScale(s);
+            const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+            return { s, x: b.cx - cx * s, y: b.cy - cy * s };
+        }
+
+        function highlightChip() {
+            document.querySelectorAll('.mobile-chip').forEach(c => {
+                c.classList.toggle('active', c.dataset.section === currentSection);
+            });
+        }
+        let userAdjusted = false; // true once the user pans/pinches — don't auto-snap over them
+        function applyPreset(animate) {
+            const t = computeTarget(currentSection);
+            if (!t) return;
+            cam.x = t.x; cam.y = t.y; cam.s = t.s;
+            applyCam(animate);
+        }
+        function goTo(id, animate = true) {
+            if (!SECTIONS.includes(id)) return;
+            currentSection = id;
+            userAdjusted = false;   // explicit section jump resets the view
+            highlightChip();
+            applyPreset(animate);
+        }
+        // Re-fit the current section after a layout change, but never override a
+        // view the user has deliberately panned or zoomed.
+        function reframe() { if (mobileActive && !userAdjusted) applyPreset(true); }
+        function step(dir) {
+            const i = SECTIONS.indexOf(currentSection);
+            goTo(SECTIONS[(i + dir + SECTIONS.length) % SECTIONS.length]);
+        }
+
+        // ---- Wire the nav chrome ----
+        document.getElementById('mobile-nav-prev')?.addEventListener('click', (e) => { e.stopPropagation(); step(-1); });
+        document.getElementById('mobile-nav-next')?.addEventListener('click', (e) => { e.stopPropagation(); step(1); });
+        document.querySelectorAll('.mobile-chip').forEach(chip => {
+            chip.addEventListener('click', (e) => { e.stopPropagation(); goTo(chip.dataset.section); });
+        });
+
+        // Menu button opens the shared game menu overlay.
+        document.getElementById('btn-mobile-menu')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            window.__menuOpenedAt = Date.now();
+            document.getElementById('game-menu-overlay')?.classList.remove('hidden');
+        });
+        // Menu tool buttons proxy to the real (hidden) desktop top-bar buttons.
+        document.querySelectorAll('#mobile-menu-tools [data-proxy]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.getElementById('game-menu-overlay')?.classList.add('hidden');
+                document.getElementById(btn.dataset.proxy)?.click();
+            });
+        });
+
+        // Phase controls proxy to the real phase buttons so all game logic is reused.
+        document.getElementById('mobile-next-phase')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('next-phase-btn')?.click();
+        });
+        document.getElementById('mobile-skip-turn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('skip-turn-btn')?.click();
+        });
+        document.getElementById('mobile-carry-cancel')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (typeof cancelGrab === 'function') cancelGrab();
+        });
+
+        // ---- Free pan (1 finger) & pinch-zoom (2 fingers) on the table ----
+        // A tap (little movement) still falls through to grab/place a card; a drag
+        // pans the camera and its trailing click is swallowed so nothing is grabbed.
+        let gest = null;         // active gesture state
+        let clickGuardUntil = 0; // swallow the click that ends a pan/pinch
+        const TAP_SLOP = 9;      // px of movement still treated as a tap
+
+        function dist(t0, t1) { return Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY); }
+
+        gf.addEventListener('touchstart', (e) => {
+            if (!mobileActive) return;
+            if (e.touches.length === 1) {
+                gest = { mode: 'pan', moved: false, sx: e.touches[0].clientX, sy: e.touches[0].clientY,
+                         camx: cam.x, camy: cam.y };
+            } else if (e.touches.length === 2) {
+                const [a, b] = e.touches;
+                const midX = (a.clientX + b.clientX) / 2, midY = (a.clientY + b.clientY) / 2;
+                gest = { mode: 'pinch', moved: true, d0: dist(a, b), s0: cam.s,
+                         // field-local point under the pinch centre — kept fixed while zooming
+                         lx: (midX - cam.x) / cam.s, ly: (midY - cam.y) / cam.s };
+                clickGuardUntil = Date.now() + 500;
+            }
+        }, { passive: true });
+
+        gf.addEventListener('touchmove', (e) => {
+            if (!gest || !mobileActive) return;
+            if (gest.mode === 'pan' && e.touches.length === 1) {
+                const dx = e.touches[0].clientX - gest.sx;
+                const dy = e.touches[0].clientY - gest.sy;
+                if (!gest.moved && Math.hypot(dx, dy) < TAP_SLOP) return; // still a tap
+                gest.moved = true;
+                cam.x = gest.camx + dx;
+                cam.y = gest.camy + dy;
+                applyCam(false);
+            } else if (gest.mode === 'pinch' && e.touches.length === 2) {
+                const [a, b] = e.touches;
+                const midX = (a.clientX + b.clientX) / 2, midY = (a.clientY + b.clientY) / 2;
+                cam.s = clampScale(gest.s0 * (dist(a, b) / gest.d0));
+                cam.x = midX - gest.lx * cam.s;
+                cam.y = midY - gest.ly * cam.s;
+                applyCam(false);
+            }
+        }, { passive: true });
+
+        gf.addEventListener('touchend', (e) => {
+            if (gest && gest.moved) { clickGuardUntil = Date.now() + 350; userAdjusted = true; }
+            if (e.touches.length === 0) gest = null;
+        }, { passive: true });
+
+        // Swallow the click that a pan/pinch leaves behind so it never grabs a card.
+        document.addEventListener('click', (e) => {
+            if (Date.now() < clickGuardUntil) {
+                clickGuardUntil = 0;
+                e.stopPropagation();
+                e.preventDefault();
+            }
+        }, true);
+
+        // ---- Long-press to inspect a card (replaces desktop hover on mobile) ----
+        // A quick tap grabs/places; press-and-hold ~450ms opens the fullscreen detail
+        // modal instead, and suppresses the trailing tap so it doesn't also grab.
+        function cardDataFromEl(el) {
+            const card = el.closest && el.closest('.card');
+            if (!card || card.classList.contains('slot-empty')) return null;
+            if (card.dataset.cardData) {
+                try { const d = JSON.parse(card.dataset.cardData); if (d && !Array.isArray(d)) return { card: d, stack: false }; } catch (e) {}
+            }
+            const loc = card.dataset.loc;
+            if (loc && loc !== 'AB') {
+                const avail = cardData.filter(c => selectedSets.includes(c.set) && c.location === loc);
+                if (avail.length) return { card: avail[avail.length - 1], stack: true };
+            }
+            return null;
+        }
+        let lpTimer = null, lpStart = null;
+        document.addEventListener('touchstart', (e) => {
+            if (!mobileActive || e.touches.length !== 1) return;
+            const card = e.target.closest && e.target.closest('.card');
+            if (!card) return;
+            const t = e.touches[0];
+            lpStart = { x: t.clientX, y: t.clientY };
+            clearTimeout(lpTimer);
+            lpTimer = setTimeout(() => {
+                const info = cardDataFromEl(card);
+                if (info && info.card) {
+                    showCardDetails(info.card, info.stack);
+                    clickGuardUntil = Date.now() + 700;   // hold = inspect only, never grab
+                    if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
+                }
+                lpTimer = null;
+            }, 450);
+        }, { passive: true });
+        document.addEventListener('touchmove', (e) => {
+            if (!lpTimer || !lpStart) return;
+            const t = e.touches[0];
+            if (Math.hypot(t.clientX - lpStart.x, t.clientY - lpStart.y) > 10) { clearTimeout(lpTimer); lpTimer = null; }
+        }, { passive: true });
+        document.addEventListener('touchend', () => { clearTimeout(lpTimer); lpTimer = null; }, { passive: true });
+
+        // Tap the fullscreen card preview to dismiss it (no hover-out on touch).
+        document.getElementById('card-modal')?.addEventListener('click', () => {
+            if (mobileActive) document.getElementById('card-modal').classList.add('hidden');
+        });
+
+        // ---- Keep the mobile chrome in sync with game state (decoupled poll) ----
+        function syncChrome() {
+            if (!mobileActive) return;
+            // Carrying-a-card banner
+            const holding = Array.isArray(heldCards) && heldCards.length > 0;
+            if (carry) {
+                carry.classList.toggle('hidden', !holding);
+                if (holding) {
+                    const name = heldCards[0] && heldCards[0].name ? heldCards[0].name : 'a card';
+                    const txt = document.getElementById('mobile-carry-text');
+                    if (txt) txt.textContent = `Carrying ${name} — tap a glowing slot`;
+                }
+            }
+            // Turn + phase mirror
+            const label = document.getElementById('active-player-label');
+            const turnEl = document.getElementById('mobile-turn');
+            if (turnEl && label) {
+                turnEl.textContent = label.textContent || 'PLAYER 1';
+                turnEl.classList.toggle('ai-turn', label.classList.contains('ai-active'));
+            }
+            const activeBlock = document.querySelector('#game-phase-display .phase-block.active');
+            const phaseEl = document.getElementById('mobile-phase');
+            if (phaseEl) phaseEl.textContent = activeBlock ? (activeBlock.dataset.phase || '') : '';
+            // Skip-turn availability mirrors the real button
+            const realSkip = document.getElementById('skip-turn-btn');
+            const mSkip = document.getElementById('mobile-skip-turn');
+            if (mSkip && realSkip) mSkip.classList.toggle('hidden', realSkip.classList.contains('hidden'));
+        }
+        setInterval(syncChrome, 250);
+
+        // Re-frame when the board content or the window changes size.
+        let reframeTimer = null;
+        function scheduleReframe() {
+            clearTimeout(reframeTimer);
+            reframeTimer = setTimeout(reframe, 200);
+        }
+        new MutationObserver(scheduleReframe).observe(gf, { childList: true, subtree: true });
+        // A real viewport change re-fits the current section (clears manual pan/zoom).
+        window.addEventListener('resize', () => { userAdjusted = false; scheduleReframe(); });
+        window.addEventListener('orientationchange', () => { userAdjusted = false; setTimeout(reframe, 300); });
+
+        // ---- Activate / deactivate based on screen ----
+        const mqSmall = window.matchMedia('(max-width: 820px)');
+        const mqCoarse = window.matchMedia('(pointer: coarse)');
+        function shouldBeMobile() { return mqSmall.matches || mqCoarse.matches; }
+
+        function applyMobileMode() {
+            const want = shouldBeMobile();
+            if (want === mobileActive) return;
+            mobileActive = want;
+            document.body.classList.toggle('mobile-mode', want);
+            if (want) {
+                highlightChip();
+                // Wait a frame so layout settles before measuring.
+                requestAnimationFrame(() => requestAnimationFrame(() => goTo(currentSection)));
+            } else {
+                gf.style.removeProperty('--cam-x');
+                gf.style.removeProperty('--cam-y');
+                gf.style.removeProperty('--cam-s');
+            }
+        }
+        mqSmall.addEventListener('change', applyMobileMode);
+        mqCoarse.addEventListener('change', applyMobileMode);
+        applyMobileMode();
+
+        // Expose for the reset flow and console debugging.
+        window.fcMobile = { goTo, reframe, step, isActive: () => mobileActive };
+    })();
 
     setupTurnControl();
     initAllActiveBoards(); // Initial spawn

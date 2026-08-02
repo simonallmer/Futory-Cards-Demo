@@ -1169,7 +1169,7 @@ body.dev-mode-on::after {
 }
 
 /* Turn Overlay Styling */
-#pass-device-overlay, #game-over-overlay {
+#pass-device-overlay, #game-over-overlay, #game-menu-overlay {
   position: fixed;
   inset: 0;
   z-index: 99999;
@@ -3363,4 +3363,277 @@ body.ai-turn.artifact-selection-active #game-field { pointer-events: auto; }
   0% { transform: scale(1); }
   40% { transform: scale(1.35); }
   100% { transform: scale(1); }
+}
+
+/* ==================================================================== */
+/* ==================== MOBILE / SMARTPHONE MODE ====================== */
+/* Everything here is gated behind body.mobile-mode, activated by JS     */
+/* only on small / touch screens — the desktop layout is untouched.      */
+/* ==================================================================== */
+
+/* Mobile chrome is hidden by default (desktop) */
+#mobile-topbar,
+#mobile-nav,
+#mobile-carry { display: none; }
+.mobile-menu-grid { display: none; }
+
+/* ---- Global mobile shell ---- */
+body.mobile-mode {
+  overflow: hidden;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+/* Hide desktop-only chrome */
+body.mobile-mode .top-menu,
+body.mobile-mode .back-to-arcade-btn,
+body.mobile-mode #game-phase-display,
+body.mobile-mode #quick-help-window { display: none !important; }
+
+/* Show mobile chrome */
+body.mobile-mode #mobile-topbar { display: flex; }
+body.mobile-mode #mobile-nav { display: flex; }
+body.mobile-mode #mobile-carry:not(.hidden) { display: flex; }
+body.mobile-mode .mobile-menu-grid { display: grid; }
+
+/* ---- The camera: fixed-size "table" the JS pans & zooms ---- */
+body.mobile-mode #game-field {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 900px;            /* stable design width so the table lays out comfortably */
+  min-height: 0;
+  height: auto;
+  padding: 24px 40px;
+  margin: 0;
+  gap: 26px 32px;
+  transform-origin: 0 0;
+  transform: translate(var(--cam-x, 0px), var(--cam-y, 0px)) scale(var(--cam-s, 1));
+  transition: transform 0.46s cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 1;
+}
+
+/* In bird's-eye the opponent should still read clearly */
+body.mobile-mode #game-field[class*="turn-p"] .player-zone:not(.active-player) {
+  opacity: 0.7;
+  filter: grayscale(0.3);
+}
+
+/* ---- Top bar ---- */
+#mobile-topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: calc(52px + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) 12px 0 12px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: rgba(8, 10, 14, 0.82);
+  border-bottom: 1px solid var(--glass-border);
+  backdrop-filter: blur(14px);
+  z-index: 400;
+}
+.mobile-icon-btn {
+  flex: 0 0 auto;
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  color: #fff;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.mobile-icon-btn:active { transform: scale(0.93); }
+
+#mobile-phase-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+  overflow: hidden;
+}
+#mobile-turn {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--accent-color);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+#mobile-turn.ai-turn { color: var(--die-orange); }
+#mobile-phase {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  color: #fff;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+#mobile-phase-controls { flex: 0 0 auto; display: flex; gap: 6px; }
+.mobile-pill {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.mobile-pill.primary {
+  background: rgba(0, 200, 255, 0.16);
+  border-color: rgba(0, 200, 255, 0.55);
+  color: #baf3ff;
+  box-shadow: 0 0 14px rgba(0, 200, 255, 0.18);
+}
+.mobile-pill:active { transform: scale(0.94); }
+
+/* ---- Carry banner ---- */
+#mobile-carry {
+  position: fixed;
+  left: 12px; right: 12px;
+  top: calc(52px + env(safe-area-inset-top) + 6px);   /* sits just under the top bar */
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(10, 14, 20, 0.9);
+  border: 1px solid rgba(0, 200, 255, 0.5);
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 200, 255, 0.22);
+  backdrop-filter: blur(12px);
+  z-index: 401;
+  animation: carryPulse 1.6s ease-in-out infinite;
+}
+@keyframes carryPulse {
+  0%, 100% { box-shadow: 0 0 16px rgba(0, 200, 255, 0.18); }
+  50% { box-shadow: 0 0 26px rgba(0, 200, 255, 0.38); }
+}
+#mobile-carry-text {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #d8f6ff;
+}
+#mobile-carry .mobile-pill { padding: 6px 10px; }
+
+/* ---- Bottom section nav ---- */
+#mobile-nav {
+  position: fixed;
+  left: 0; right: 0;
+  bottom: var(--nav-bottom-offset, 0px);   /* sit above Safari's bottom address bar */
+  height: calc(60px + env(safe-area-inset-bottom));
+  padding: 0 8px env(safe-area-inset-bottom) 8px;
+  align-items: center;
+  gap: 6px;
+  background: rgba(8, 10, 14, 0.85);
+  border-top: 1px solid var(--glass-border);
+  backdrop-filter: blur(14px);
+  z-index: 400;
+}
+.mobile-nav-arrow {
+  flex: 0 0 auto;
+  width: 32px; height: 42px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  color: #fff;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.mobile-nav-arrow:active { transform: scale(0.92); }
+#mobile-nav-chips {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  justify-content: center;
+  scrollbar-width: none;
+}
+#mobile-nav-chips::-webkit-scrollbar { display: none; }
+.mobile-chip {
+  flex: 0 0 auto;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #9fb0bd;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 8px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+.mobile-chip.active {
+  color: #eafcff;
+  background: rgba(0, 200, 255, 0.18);
+  border-color: rgba(0, 200, 255, 0.6);
+  box-shadow: 0 0 12px rgba(0, 200, 255, 0.25);
+}
+
+/* ---- Reposition floating helpers for mobile ---- */
+body.mobile-mode #ai-feed {
+  top: auto;
+  bottom: calc(70px + var(--nav-bottom-offset, 0px) + env(safe-area-inset-bottom));
+  right: 10px;
+  left: auto;
+  width: 190px;
+  font-size: 11px;
+  z-index: 402;
+}
+body.mobile-mode #landmark-context {
+  position: fixed;
+  left: 12px; right: 12px;
+  top: auto;
+  bottom: calc(70px + env(safe-area-inset-bottom));
+  width: auto;
+  max-height: 45vh;
+  overflow-y: auto;
+  z-index: 403;
+}
+
+/* ---- Mobile menu tool grid (inside the shared menu overlay) ---- */
+.mobile-menu-grid {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+  margin: 6px 0;
+}
+.mobile-menu-grid .menu-btn { width: 100%; padding: 10px 4px; font-size: 13px; }
+
+/* ---- Contain desktop-sized tool panels / screens on phones ---- */
+/* These panels were built at fixed desktop sizes; on mobile we clamp them to the
+   viewport and let them scroll, and scale the fixed 900x600 rules book to fit. */
+body.mobile-mode .glass-panel.database-panel,
+body.mobile-mode #keywords-list-modal .modal-content,
+body.mobile-mode #options-modal .modal-content,
+body.mobile-mode #keyword-modal .modal-content,
+body.mobile-mode #location-modal .split-view,
+body.mobile-mode #devlog-screen > .glass-panel {
+  max-width: 94vw !important;
+  max-height: 82vh !important;
+  overflow: auto !important;
+  box-sizing: border-box;
+}
+body.mobile-mode .database-panel .table-container { max-height: 64vh; overflow: auto; }
+body.mobile-mode .rules-book-panel {
+  transform: scale(0.4);
+  transform-origin: center center;
 }

@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <!-- "Add to Home Screen" runs the game truly full-screen (no Safari chrome) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Futory Cards</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,11 +16,45 @@
 
     <div class="top-menu tech-font">
         <button class="menu-btn help-icon-btn" id="btn-help" title="Quick Help">?</button>
+        <button class="menu-btn" id="btn-menu">Menu</button>
         <button class="menu-btn" id="btn-rules">Rules</button>
         <button class="menu-btn" id="btn-keywords">Keywords</button>
         <button class="menu-btn" id="btn-database">Database</button>
         <button class="menu-btn" id="btn-options">Options</button>
     </div>
+
+    <!-- ==================== MOBILE CHROME (only shown in body.mobile-mode) ==================== -->
+    <!-- Compact top bar: menu · turn/phase · phase controls -->
+    <div id="mobile-topbar" class="tech-font">
+        <button id="btn-mobile-menu" class="mobile-icon-btn" title="Menu" aria-label="Menu">&#9776;</button>
+        <div id="mobile-phase-label">
+            <span id="mobile-turn">PLAYER 1</span>
+            <span id="mobile-phase">STEAM</span>
+        </div>
+        <div id="mobile-phase-controls">
+            <button id="mobile-skip-turn" class="mobile-pill hidden">Skip</button>
+            <button id="mobile-next-phase" class="mobile-pill primary">Next &#9654;</button>
+        </div>
+    </div>
+
+    <!-- "Carrying a card" banner: tap a glowing slot to place, or cancel -->
+    <div id="mobile-carry" class="tech-font hidden">
+        <span id="mobile-carry-text">Carrying a card &mdash; tap a glowing slot</span>
+        <button id="mobile-carry-cancel" class="mobile-pill" aria-label="Cancel">&#10005;</button>
+    </div>
+
+    <!-- Bottom section navigation: arrows + tappable view chips -->
+    <div id="mobile-nav" class="tech-font">
+        <button id="mobile-nav-prev" class="mobile-nav-arrow" aria-label="Previous view">&#10094;</button>
+        <div id="mobile-nav-chips">
+            <button class="mobile-chip" data-section="overview">&#9634; Field</button>
+            <button class="mobile-chip" data-section="opponent">&#9650; Rival</button>
+            <button class="mobile-chip" data-section="bazaar">&#9632; Bazaar</button>
+            <button class="mobile-chip" data-section="you">&#9660; You</button>
+        </div>
+        <button id="mobile-nav-next" class="mobile-nav-arrow" aria-label="Next view">&#10095;</button>
+    </div>
+    <!-- ==================== END MOBILE CHROME ==================== -->
 
     <!-- Quick Help Window -->
     <div id="quick-help-window" class="glass-panel hidden">
@@ -80,6 +118,48 @@
         </div>
     </div>
 
+    <!-- Game Menu (accessible any time from the top bar) -->
+    <div id="game-menu-overlay" class="hidden">
+        <div class="overlay-backdrop"></div>
+        <div class="overlay-content">
+            <h1 class="fantasy-font glowing-text">Menu</h1>
+            <div class="game-over-buttons">
+                <button id="btn-menu-resume" class="tech-font menu-btn">Resume Game</button>
+                <button id="btn-menu-newgame" class="tech-font menu-btn">New Game</button>
+                <!-- Mobile: the desktop top-bar tools live here instead -->
+                <div id="mobile-menu-tools" class="mobile-menu-grid">
+                    <button class="tech-font menu-btn secondary-btn" data-proxy="btn-rules">Rules</button>
+                    <button class="tech-font menu-btn secondary-btn" data-proxy="btn-keywords">Keywords</button>
+                    <button class="tech-font menu-btn secondary-btn" data-proxy="btn-database">Database</button>
+                    <button class="tech-font menu-btn secondary-btn" data-proxy="btn-options">Options</button>
+                    <button class="tech-font menu-btn secondary-btn" data-proxy="btn-help">Help</button>
+                </div>
+                <a href="https://simonallmer.com/arcade" target="_top" id="btn-menu-arcade" class="tech-font menu-btn secondary-btn">Back to Arcade</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating card-details modal — kept OUTSIDE #game-field so its position:fixed
+         centres on the viewport (a transformed #game-field would otherwise trap it). -->
+    <div id="card-modal" class="modal hidden">
+        <div class="modal-content card-modal-content">
+            <button id="close-modal" class="close-btn">&times;</button>
+            <img id="modal-card-img" class="card-direct-img hidden" src="" alt="Card Image">
+            <div id="card-details" class="details-text tech-font hidden">
+                <h2 id="modal-card-name"></h2>
+                <p>Type: <span id="detail-type" class="highlight"></span></p>
+                <p>Cost: <span id="detail-cost" class="highlight"></span></p>
+                <p>Rarity: <span id="detail-rarity" class="highlight"></span></p>
+                <p>Set: <span id="detail-set" class="highlight"></span></p>
+                <p>Number: <span id="detail-number" class="highlight"></span></p>
+                <p>Location: <span id="detail-location" class="highlight"></span></p>
+                <hr class="separator">
+                <p class="desc-text" id="detail-desc"></p>
+                <p class="lore-text" id="detail-lore"></p>
+            </div>
+        </div>
+    </div>
+
     <div id="game-field" class="players-2">
         <!-- Player Slots (Populated by JS) -->
         <div id="player-1" class="player-zone p1"></div>
@@ -88,25 +168,6 @@
         <div id="player-4" class="player-zone p4"></div>
 
         <div id="game-view" class="game-container bazaar-container">
-        <!-- Floating details modal -->
-        <div id="card-modal" class="modal hidden">
-            <div class="modal-content card-modal-content">
-                <button id="close-modal" class="close-btn">&times;</button>
-                <img id="modal-card-img" class="card-direct-img hidden" src="" alt="Card Image">
-                <div id="card-details" class="details-text tech-font hidden">
-                    <h2 id="modal-card-name"></h2>
-                    <p>Type: <span id="detail-type" class="highlight"></span></p>
-                    <p>Cost: <span id="detail-cost" class="highlight"></span></p>
-                    <p>Rarity: <span id="detail-rarity" class="highlight"></span></p>
-                    <p>Set: <span id="detail-set" class="highlight"></span></p>
-                    <p>Number: <span id="detail-number" class="highlight"></span></p>
-                    <p>Location: <span id="detail-location" class="highlight"></span></p>
-                    <hr class="separator">
-                    <p class="desc-text" id="detail-desc"></p>
-                    <p class="lore-text" id="detail-lore"></p>
-                </div>
-            </div>
-        </div>
 
         <!-- The Bazaar Area -->
         <div class="bazaar-area">
