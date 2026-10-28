@@ -1,13 +1,13 @@
 /* ============================================================
    Futory Cards — Demo Gate
-   Free 10-minute daily play limit. On mobile the old always-on
+   Free 5-minute daily play limit. On mobile the old always-on
    ticking timer overlapped the section nav, so it's replaced by a
-   one-time Welcome message; the 10-minute cutoff is unchanged.
+   one-time Welcome message; the 5-minute cutoff is unchanged.
    The countdown starts when the player dismisses the Welcome, so
    reading it (or the future tutorial) never costs demo time.
    ============================================================ */
 
-const DEMO_DURATION_MS = 10 * 60 * 1000; // 10 minutes
+const DEMO_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 const STORAGE_KEY_START = 'futoryDemoStartTime';
 const STORAGE_KEY_DATE = 'futoryDemoDate';
 
@@ -78,7 +78,7 @@ function showWelcomeMessage(onStart) {
             <p style="font-size: 0.85rem; letter-spacing: 0.28em; color: ${ACCENT}; text-transform: uppercase; margin-bottom: 14px;">Welcome to the free demo of</p>
             <h1 style="font-family: 'Cinzel', serif; font-size: 2.1rem; letter-spacing: 0.12em; color: #fff; text-shadow: 0 0 20px ${ACCENT_DIM}; margin: 0 0 22px;">FUTORY CARDS</h1>
             <p style="font-size: 1.02rem; line-height: 1.7; letter-spacing: 0.03em; color: ${TEXT_DIM}; margin-bottom: 32px;">
-                You have <strong style="color:${ACCENT};">10 minutes</strong> of free play per day.
+                You have <strong style="color:${ACCENT};">5 minutes</strong> of free play per day.
                 Your time starts when you tap below.
             </p>
             <button id="demo-welcome-start" style="
@@ -99,7 +99,7 @@ function showWelcomeMessage(onStart) {
     });
 }
 
-/* ---------- Expired blocker (the actual 10-minute cutoff) ---------- */
+/* ---------- Expired blocker (the actual 5-minute cutoff) ---------- */
 
 function showExpiredOverlay() {
     if (document.getElementById('demo-expired-overlay')) return;
@@ -119,7 +119,7 @@ function showExpiredOverlay() {
     `;
     overlay.innerHTML = `
         <h1 style="font-family: 'Cinzel', serif; font-size: 1.9rem; letter-spacing: 0.14em; color: ${ACCENT}; text-shadow: 0 0 18px ${ACCENT_DIM}; margin-bottom: 18px;">DEMO TIME ENDED</h1>
-        <p style="font-size: 1.05rem; letter-spacing: 0.06em; color: ${TEXT_DIM}; margin-bottom: 12px;">Your daily 10 minutes of free play are up.</p>
+        <p style="font-size: 1.05rem; letter-spacing: 0.06em; color: ${TEXT_DIM}; margin-bottom: 12px;">Your daily 5 minutes of free play are up.</p>
         <p style="font-size: 0.95rem; max-width: 420px; line-height: 1.7; color: ${TEXT_DIM}; margin-bottom: 34px;">Play Futory Cards without limits &mdash; and every other game &mdash; with an Arcade subscription.</p>
         <a href="${ARCADE_URL}" target="_top" rel="noopener noreferrer" style="
             display: inline-block; padding: 13px 42px;
@@ -150,7 +150,7 @@ function startExpirationChecker() {
 function bootDemoGate() {
     initDemoDay();
     if (isDemoExpired()) {
-        showExpiredOverlay();          // already used today's 10 minutes
+        showExpiredOverlay();          // already used today's 5 minutes
     } else if (!hasStarted()) {
         showWelcomeMessage(() => {     // first run today — clock starts on dismiss
             startPlayClock();
