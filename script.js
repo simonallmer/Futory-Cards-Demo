@@ -7388,12 +7388,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const visibleSlots = handSlots.filter((slot, index) => index < activeLimit || !slot.classList.contains('slot-empty'));
         const totalDisplayedCount = visibleSlots.length;
 
+        // Centre the fan on the cards you actually HOLD, not on the whole hand
+        // limit. Cards always fill from the left (s1, s2, …), so sizing the fan
+        // to the limit left the real cards bunched to the left of centre with the
+        // empty capacity slots padding the right. On desktop there's room to
+        // spare, but inside the mobile section camera (which frames the player
+        // zone and zooms in) that left bias pushed the held cards off the screen
+        // edge — the "zoomed in / cut off" hand. Sizing the fan to the filled
+        // count centres the held cards; the empty drop slots simply trail to the
+        // right (still present and tappable). An all-empty hand keeps the old
+        // centred placeholder look.
+        const filledCount = handSlots.filter(s => !s.classList.contains('slot-empty')).length;
+        const fanTotal = filledCount > 0 ? filledCount : totalDisplayedCount;
+
         handSlots.forEach((slot, index) => {
             const isVisible = index < activeLimit || !slot.classList.contains('slot-empty');
-            
+
             if (isVisible) {
                 slot.classList.remove('hidden-slot');
-                slot.style.setProperty('--fan-total', totalDisplayedCount);
+                slot.style.setProperty('--fan-total', fanTotal);
                 slot.style.setProperty('--fan-index', index);
             } else {
                 slot.classList.add('hidden-slot');
